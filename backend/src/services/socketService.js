@@ -6,14 +6,14 @@ class SocketService {
   constructor(server, corsOptions) {
     this.io = new Server(server, {
       cors: {
-        origin: corsOptions.origin,
+        origin: '*',
         methods: ['GET', 'POST'],
-        credentials: false,
-        transports: ['websocket', 'polling']
+        credentials: false
       },
       allowEIO3: true,
       pingTimeout: 60000,
-      pingInterval: 25000
+      pingInterval: 25000,
+      transports: ['websocket', 'polling']
     });
 
     // Token doğrulama middleware'i

@@ -55,7 +55,6 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        credentials: 'omit',
         mode: 'cors'
       });
 
