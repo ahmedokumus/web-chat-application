@@ -149,25 +149,59 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
     try {
       setIsLoading(true);
       setError('');
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-chat-application-t77k.onrender.com/api';
+
+      console.log('Mesajlar yükleniyor...', { senderId, receiverId });
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/between/${senderId}/${receiverId}`, {
+      const response = await fetch(`${apiUrl}/messages/between/${senderId}/${receiverId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
           'Content-Type': 'application/json'
-        }
+        },
+        mode: 'cors'
       });
 
-      if (!response.ok) {
-        throw new Error('Mesajlar alınamadı');
+      console.log('Mesaj API Yanıt Status:', response.status);
+      
+      // Yanıtın içeriğini önce text olarak al
+      const text = await response.text();
+      console.log('Ham API Yanıtı:', text);
+
+      // Eğer yanıt boşsa veya HTML içeriyorsa hata fırlat
+      if (!text || text.includes('<!DOCTYPE')) {
+        throw new Error('Geçersiz API yanıtı');
       }
 
-      const data = await response.json();
-      setMessages(Array.isArray(data) ? data : []);
+      // Text'i JSON'a çevir
+      const data = JSON.parse(text);
+      console.log('İşlenmiş Mesajlar:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Mesajlar alınamadı');
+      }
+
+      // Mesajları kontrol et ve sırala
+      const sortedMessages = Array.isArray(data) 
+        ? data.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        : [];
+
+      setMessages(sortedMessages);
       scrollToBottom();
     } catch (error) {
       console.error('Mesajlar yüklenirken hata:', error);
-      setError('Mesajlar yüklenirken bir hata oluştu');
+      if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+        if (errorMessage.includes('token') || errorMessage.includes('yetkilendirme')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return;
+        }
+        setError('Mesajlar yüklenirken bir hata oluştu: ' + error.message);
+      }
     } finally {
       setIsLoading(false);
     }

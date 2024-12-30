@@ -1,79 +1,89 @@
 const Message = require('../models/message');
+const logger = require('../config/logger');
 
 class MessageController {
-  // Mesaj gönderme
+  // İki kullanıcı arasındaki mesajları getir
+  async getMessagesBetweenUsers(req, res) {
+    try {
+      const { senderId, receiverId } = req.params;
+      logger.info('Mesajlar istendi:', { senderId, receiverId });
+
+      // Mesajları her iki yönde de ara
+      const messages = await Message.find({
+        $or: [
+          { sender_id: senderId, receiver_id: receiverId },
+          { sender_id: receiverId, receiver_id: senderId }
+        ]
+      }).sort({ createdAt: 1 });
+
+      logger.info(`${messages.length} mesaj bulundu`);
+      res.json(messages);
+    } catch (error) {
+      logger.error('Mesajlar getirilirken hata:', error);
+      res.status(500).json({ error: 'Mesajlar alınırken bir hata oluştu' });
+    }
+  }
+
+  // Yeni mesaj gönder
   async sendMessage(req, res) {
     try {
-      const { receiver_id, content, message_type = 'text' } = req.body;
-      const sender_id = req.user._id;
+      const { sender_id, receiver_id, content } = req.body;
+      logger.info('Yeni mesaj gönderiliyor:', { sender_id, receiver_id });
+
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: 'Mesaj içeriği boş olamaz' });
+      }
 
       const message = new Message({
         sender_id,
         receiver_id,
-        content,
-        message_type
+        content: content.trim()
       });
 
       await message.save();
-
-      // Socket.IO mesaj gönderimi socketService üzerinden yapılacak
+      logger.info('Yeni mesaj kaydedildi:', { messageId: message._id });
       res.status(201).json(message);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      logger.error('Mesaj gönderilirken hata:', error);
+      res.status(500).json({ error: 'Mesaj gönderilemedi' });
     }
   }
 
-  // İki kullanıcı arasındaki mesajları getir
-  async getMessagesBetweenUsers(req, res) {
-    try {
-      const { user1_id, user2_id } = req.params;
-
-      const messages = await Message.find({
-        $or: [
-          { sender_id: user1_id, receiver_id: user2_id },
-          { sender_id: user2_id, receiver_id: user1_id }
-        ]
-      }).sort({ createdAt: 1 });
-
-      res.json(messages);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  // Mesajı okundu olarak işaretle
-  async markMessageAsRead(req, res) {
-    try {
-      const { messageId } = req.params;
-
-      const message = await Message.findById(messageId);
-      if (!message) {
-        return res.status(404).json({ error: 'Mesaj bulunamadı' });
-      }
-
-      message.is_read = true;
-      message.read_at = new Date();
-      await message.save();
-
-      res.json(message);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  // Kullanıcının okunmamış mesajlarını getir
+  // Okunmamış mesajları getir
   async getUnreadMessages(req, res) {
     try {
       const { userId } = req.params;
+      logger.info('Okunmamış mesajlar istendi:', { userId });
 
       const messages = await Message.find({
         receiver_id: userId,
         is_read: false
       }).sort({ createdAt: -1 });
 
+      logger.info(`${messages.length} okunmamış mesaj bulundu`);
       res.json(messages);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      logger.error('Okunmamış mesajlar getirilirken hata:', error);
+      res.status(500).json({ error: 'Okunmamış mesajlar alınırken bir hata oluştu' });
+    }
+  }
+
+  // Mesajları okundu olarak işaretle
+  async markMessagesAsRead(req, res) {
+    try {
+      const { messageIds } = req.body;
+      logger.info('Mesajlar okundu olarak işaretleniyor:', { messageIds });
+
+      const result = await Message.updateMany(
+        { _id: { $in: messageIds } },
+        { $set: { is_read: true } }
+      );
+
+      logger.info(`${result.modifiedCount} mesaj okundu olarak işaretlendi`);
+      res.json({ success: true, modifiedCount: result.modifiedCount });
+    } catch (error) {
+      logger.error('Mesajlar okundu işaretlenirken hata:', error);
+      res.status(500).json({ error: 'Mesajlar okundu olarak işaretlenemedi' });
     }
   }
 }
