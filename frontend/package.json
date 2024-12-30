@@ -9,8 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@next/font": "^14.2.15",
-    "caniuse-lite": "^1.0.30001690",
     "cors": "^2.8.5",
     "next": "15.1.3",
     "react": "^19.0.0",
@@ -25,6 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
+    "caniuse-lite": "^1.0.30001690",
     "eslint": "^9",
     "eslint-config-next": "15.1.3",
     "postcss": "^8.4.49",

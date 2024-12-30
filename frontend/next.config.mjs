@@ -1,11 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  swcMinify: false, // SWC minification'ı devre dışı bırak
+  // Turbopack yapılandırması
+  experimental: {
+    turbo: {
+      rules: {
+        // Turbopack kuralları
+      }
+    }
+  },
+  // Webpack yapılandırması sadece webpack kullanıldığında çalışacak
   webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-    };
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
     return config;
   },
 };
