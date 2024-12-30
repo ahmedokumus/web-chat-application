@@ -76,7 +76,7 @@ function LoginForm() {
                 id="email"
                 type="email"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-input-border bg-input-background placeholder-gray-500 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out"
+                className="appearance-none relative block w-full px-3 py-2 border border-input-border bg-input-background placeholder-gray-500 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out text-black"
                 placeholder="ornek@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -90,7 +90,7 @@ function LoginForm() {
                 id="password"
                 type="password"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-input-border bg-input-background placeholder-gray-500 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out"
+                className="appearance-none relative block w-full px-3 py-2 border border-input-border bg-input-background placeholder-gray-500 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out text-black"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}

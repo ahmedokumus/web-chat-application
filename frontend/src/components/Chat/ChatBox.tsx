@@ -69,6 +69,7 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [typingStatus, setTypingStatus] = useState<TypingStatus>({ isTyping: false, characterCount: 0 });
+  const [] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -255,102 +256,137 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-gray-500">Mesajlar yükleniyor...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-red-500">{error}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full flex flex-col bg-[#111827]">
-      {/* Başlık */}
-      <div className="px-6 py-4 border-b border-gray-700 bg-[#1F2937]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
-              {selectedUser.username[0].toUpperCase()}
-            </div>
-            <div>
-              <div className="font-medium text-gray-100">{selectedUser.username}</div>
-              <div className="text-sm text-gray-400">
-                {typingStatus.isTyping 
-                  ? `Yazıyor... (${typingStatus.characterCount} karakter)` 
-                  : selectedUser.isOnline 
-                    ? 'Çevrimiçi' 
-                    : 'Son görülme: 1 saat önce'}
-              </div>
-            </div>
+    <div className="flex flex-col h-full relative">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-[#1F2937]">
+        <div className="flex items-center">
+          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+            {selectedUser.username.charAt(0).toUpperCase()}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-full transition-all duration-200"
-            title="Sohbeti Kapat"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="ml-3">
+            <h2 className="text-lg font-semibold text-gray-100">{selectedUser.username}</h2>
+            {/* Çevrimiçi durumu buraya eklenebilir */}
+          </div>
         </div>
-      </div>
-
-      {/* Mesaj alanı */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 max-w-full scrollbar-thin scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 scrollbar-track-transparent bg-[#111827]">
-        {messages.map((message) => (
-          <div
-            key={message._id}
-            className={`flex w-full ${message.sender_id === currentUser?._id ? 'justify-end' : 'justify-start'}`}
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:bg-gray-700/50 rounded-full p-2 transition-colors duration-200"
+          aria-label="Close Chat"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            <div
-              className={`
-                relative max-w-[60%] p-3 rounded-2xl group break-words whitespace-pre-wrap
-                ${message.sender_id === currentUser?._id
-                  ? 'bg-[#3B82F6] text-white rounded-br-sm'
-                  : 'bg-[#374151] text-gray-100 rounded-bl-sm'
-                }
-              `}
-            >
-              <div className="break-all whitespace-pre-wrap overflow-hidden">{message.content}</div>
-              <div 
-                className={`
-                  text-xs mt-1 opacity-60
-                  ${message.sender_id === currentUser?._id ? 'text-gray-100' : 'text-gray-300'}
-                `}
-              >
-                {formatMessageTime(message.createdAt)}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      
+      {/* Messages */}
+      <div className="h-full flex flex-col">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#1E293B] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent hover:scrollbar-thumb-gray-600">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="flex items-center gap-2">
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Mesajlar yükleniyor...
               </div>
             </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+          ) : error ? (
+            <div className="text-red-500 text-center">{error}</div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className="bg-gray-800/50 p-6 rounded-2xl flex flex-col items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mb-4 text-blue-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <h3 className="text-xl font-semibold text-gray-200 mb-2">Sohbete Başla</h3>
+                <p className="text-gray-400 text-center max-w-sm">
+                  {selectedUser.username} ile sohbetiniz başlamak için hazır. İlk mesajınızı göndererek sohbete başlayabilirsiniz.
+                </p>
+              </div>
+            </div>
+          ) : (
+            messages.map((message) => (
+              <div
+                key={message._id}
+                className={`flex ${message.sender_id === currentUser?._id ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[70%] break-words rounded-lg px-4 py-2 ${
+                    message.sender_id === currentUser?._id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-100'
+                  }`}
+                >
+                  <div>{message.content}</div>
+                  <div className="text-xs opacity-75 mt-1">
+                    {formatMessageTime(message.createdAt)}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+          
+          {/* Yazıyor göstergesi */}
+          {typingStatus.isTyping && (
+            <div className="flex items-center space-x-2 text-gray-400 text-sm bg-gray-800/50 py-2 px-4 rounded-full w-fit">
+              <div className="flex space-x-1">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span>
+                {selectedUser.username} yazıyor
+                {typingStatus.characterCount > 0 && ` (${typingStatus.characterCount} karakter)`}
+              </span>
+            </div>
+          )}
+        </div>
 
-      {/* Mesaj gönderme formu */}
-      <div className="p-4 border-t border-gray-700 bg-[#1F2937]">
-        <form onSubmit={handleSendMessage} className="flex space-x-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={handleInputChange}
-            placeholder="Bir mesaj yazın..."
-            className="flex-1 px-4 py-2 bg-[#374151] border border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400"
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-          >
-            Gönder
-          </button>
+        {/* Message Input */}
+        <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-700 bg-[#1F2937]">
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={handleInputChange}
+              placeholder="Bir mesaj yazın..."
+              className="flex-1 bg-gray-700 text-gray-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={!newMessage.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            >
+              Gönder
+            </button>
+          </div>
         </form>
       </div>
     </div>
