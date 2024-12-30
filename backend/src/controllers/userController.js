@@ -19,7 +19,23 @@ class UserController {
     try {
       const { username, email, password } = req.body;
 
-      logger.debug('Kullanıcı kaydı başlatıldı', { email, username });
+      logger.debug('Kayıt isteği alındı:', { 
+        username, 
+        email,
+        bodyKeys: Object.keys(req.body),
+        headers: req.headers
+      });
+
+      if (!username || !email || !password) {
+        logger.warn('Eksik kayıt bilgileri:', { 
+          hasUsername: !!username, 
+          hasEmail: !!email, 
+          hasPassword: !!password 
+        });
+        return res.status(400).json({ 
+          error: 'Tüm alanlar zorunludur' 
+        });
+      }
 
       const existingUser = await User.findOne({ 
         $or: [{ email }, { username }] 
@@ -28,7 +44,9 @@ class UserController {
       if (existingUser) {
         logger.warn('Kayıt denemesi: Email veya kullanıcı adı kullanımda', {
           email,
-          username
+          username,
+          existingEmail: existingUser.email,
+          existingUsername: existingUser.username
         });
         return res.status(400).json({ 
           error: 'Bu email veya kullanıcı adı zaten kullanımda' 
@@ -40,6 +58,12 @@ class UserController {
         username,
         email,
         password: hashedPassword
+      });
+
+      logger.debug('Kullanıcı kaydediliyor:', { 
+        username, 
+        email,
+        userObject: user
       });
 
       await user.save();
@@ -54,7 +78,11 @@ class UserController {
 
       res.status(201).json(userResponse);
     } catch (error) {
-      logger.error('Kullanıcı kaydı hatası:', error);
+      logger.error('Kullanıcı kaydı hatası:', {
+        error: error.message,
+        stack: error.stack,
+        body: req.body
+      });
       res.status(500).json({ error: error.message });
     }
   }

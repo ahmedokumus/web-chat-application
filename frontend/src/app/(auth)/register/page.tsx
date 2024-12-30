@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/services/api';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,6 +33,12 @@ export default function RegisterPage() {
 
     try {
       setIsLoading(true);
+      
+      await authApi.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
 
       // Kayıt başarılı, login sayfasına yönlendir
       router.push('/login?registered=true');
