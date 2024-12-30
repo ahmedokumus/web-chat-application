@@ -38,34 +38,78 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
   const fetchUsers = async (currentUserId: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-chat-application-t77k.onrender.com/api';
+      
+      console.log('API URL:', apiUrl);
+      console.log('Token:', token ? 'Mevcut' : 'Bulunamadı');
+      
+      if (!token) {
+        throw new Error('Oturum bulunamadı');
+      }
+
+      // API'nin çalışıp çalışmadığını kontrol et
+      try {
+        const healthCheck = await fetch(`${apiUrl}/health`, {
+          method: 'GET',
+        });
+        console.log('API Sağlık Kontrolü:', healthCheck.status);
+      } catch (error) {
+        console.error('API sağlık kontrolü başarısız:', error);
+      }
+
+      const response = await fetch(`${apiUrl}/users`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        credentials: 'include',
+        mode: 'cors'
       });
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Sunucudan geçersiz yanıt alındı');
-      }
+      console.log('API Yanıt Status:', response.status);
+      console.log('Content-Type:', response.headers.get('content-type'));
+      console.log('Tüm Headers:', [...response.headers.entries()]);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Kullanıcılar yüklenirken bir hata oluştu');
+        if (response.status === 401) {
+          throw new Error('Oturum süresi dolmuş');
+        }
+        throw new Error(`HTTP hata: ${response.status}`);
       }
 
-      const data = await response.json();
-      
+      const text = await response.text();
+      console.log('Ham Yanıt:', text);
+
+      if (!text) {
+        throw new Error('Boş yanıt alındı');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('JSON parse hatası:', e);
+        console.error('Alınan metin:', text);
+        throw new Error('Sunucudan geçersiz JSON yanıtı alındı');
+      }
+
       // Mevcut kullanıcıyı filtrele
-      const filteredUsers = data.filter((user: User) => user._id !== currentUserId);
+      const filteredUsers = Array.isArray(data) ? data.filter((user: User) => user._id !== currentUserId) : [];
+      console.log('Filtrelenmiş kullanıcılar:', filteredUsers);
       setUsers(filteredUsers);
     } catch (error) {
       console.error('Kullanıcılar yüklenirken hata:', error);
       if (error instanceof Error) {
-        // Oturum hatası durumunda kullanıcıyı login sayfasına yönlendir
-        if (error.message.includes('token') || error.message.includes('yetkilendirme')) {
+        const errorMessage = error.message.toLowerCase();
+        if (errorMessage.includes('token') || 
+            errorMessage.includes('oturum') || 
+            errorMessage.includes('401')) {
+          console.log('Oturum hatası tespit edildi, yönlendiriliyor...');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
