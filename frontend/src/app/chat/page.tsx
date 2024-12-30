@@ -31,7 +31,10 @@ export default function ChatPage() {
         {/* Sağ taraf - Chat alanı */}
         <div className="flex-1 bg-background">
           {selectedUser ? (
-            <ChatBox selectedUser={selectedUser} />
+            <ChatBox 
+              selectedUser={selectedUser} 
+              onClose={() => setSelectedUser(null)}
+            />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-gray-500">
               <svg 

@@ -13,6 +13,12 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   useEffect(() => {
     // Önce mevcut kullanıcıyı al, sonra kullanıcıları getir
     const initializeUsers = async () => {
@@ -30,7 +36,7 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   const fetchUsers = async (currentUserId: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -64,8 +70,17 @@ export default function UserList({ onSelectUser, selectedUser }: UserListProps) 
   return (
     <div className="h-full flex flex-col bg-[#111827]">
       {/* Başlık */}
-      <div className="p-4 border-b border-gray-700 bg-[#1F2937]">
+      <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-[#1F2937]">
         <h2 className="text-lg font-semibold text-gray-100">Sohbetler</h2>
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1.5 text-sm text-gray-300 hover:text-white border border-gray-600 rounded-md hover:bg-gray-700/50 transition-all duration-200 flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Çıkış
+        </button>
       </div>
 
       {/* Kullanıcı listesi */}

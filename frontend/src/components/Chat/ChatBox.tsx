@@ -54,6 +54,7 @@ interface Message {
 
 interface ChatBoxProps {
   selectedUser: User;
+  onClose?: () => void;
 }
 
 interface TypingStatus {
@@ -61,7 +62,7 @@ interface TypingStatus {
   characterCount: number;
 }
 
-export default function ChatBox({ selectedUser }: ChatBoxProps) {
+export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -91,7 +92,7 @@ export default function ChatBox({ selectedUser }: ChatBoxProps) {
     if (!token || !selectedUser) return;
 
     // Socket.IO bağlantısını başlat
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000', {
       auth: { token }
     });
 
@@ -160,7 +161,7 @@ export default function ChatBox({ selectedUser }: ChatBoxProps) {
       setIsLoading(true);
       setError('');
       
-      const response = await fetch(`http://localhost:5000/api/messages/between/${senderId}/${receiverId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/between/${senderId}/${receiverId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -188,7 +189,7 @@ export default function ChatBox({ selectedUser }: ChatBoxProps) {
     if (!newMessage.trim() || !currentUser) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/messages/send', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -274,20 +275,31 @@ export default function ChatBox({ selectedUser }: ChatBoxProps) {
     <div className="h-full flex flex-col bg-[#111827]">
       {/* Başlık */}
       <div className="px-6 py-4 border-b border-gray-700 bg-[#1F2937]">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
-            {selectedUser.username[0].toUpperCase()}
-          </div>
-          <div>
-            <div className="font-medium text-gray-100">{selectedUser.username}</div>
-            <div className="text-sm text-gray-400">
-              {typingStatus.isTyping 
-                ? `Yazıyor... (${typingStatus.characterCount} karakter)` 
-                : selectedUser.isOnline 
-                  ? 'Çevrimiçi' 
-                  : 'Son görülme: 1 saat önce'}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
+              {selectedUser.username[0].toUpperCase()}
+            </div>
+            <div>
+              <div className="font-medium text-gray-100">{selectedUser.username}</div>
+              <div className="text-sm text-gray-400">
+                {typingStatus.isTyping 
+                  ? `Yazıyor... (${typingStatus.characterCount} karakter)` 
+                  : selectedUser.isOnline 
+                    ? 'Çevrimiçi' 
+                    : 'Son görülme: 1 saat önce'}
+              </div>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-full transition-all duration-200"
+            title="Sohbeti Kapat"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
 
