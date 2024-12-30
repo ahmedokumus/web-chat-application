@@ -123,6 +123,10 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
           // Mesajın zaten eklenip eklenmediğini kontrol et
           const messageExists = prevMessages.some(m => m._id === message._id);
           if (!messageExists) {
+            // Mesaj eklendikten sonra scroll'u en alta kaydır
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
             return [...prevMessages, message];
           }
           return prevMessages;
@@ -356,36 +360,49 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
   return (
     <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-[#1F2937]">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-            {selectedUser.username.charAt(0).toUpperCase()}
+      <div className="fixed top-0 left-0 right-0 flex flex-col border-b border-gray-700 bg-[#1F2937]">
+        {/* Üst Header */}
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white text-lg font-semibold shadow-lg">
+                {selectedUser.username.charAt(0).toUpperCase()}
+              </div>
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#1F2937]"></div>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-100">{selectedUser.username}</h2>
+              <p className="text-sm text-gray-400">Çevrimiçi</p>
+            </div>
           </div>
-          <div className="ml-3">
-            <h2 className="text-lg font-semibold text-gray-100">{selectedUser.username}</h2>
-            {/* Çevrimiçi durumu buraya eklenebilir */}
+          <div className="flex items-center space-x-3">
+            <button
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-700/50 rounded-full p-2 transition-all duration-200"
+              aria-label="Sesli Arama"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </button>
+            <button
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-700/50 rounded-full p-2 transition-all duration-200"
+              aria-label="Görüntülü Arama"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-700/50 rounded-full p-2 transition-all duration-200"
+              aria-label="Sohbeti Kapat"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:bg-gray-700/50 rounded-full p-2 transition-colors duration-200"
-          aria-label="Close Chat"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
       </div>
       
       {/* Messages */}
@@ -441,7 +458,7 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
                   }`}
                 >
                   <div>{message.content}</div>
-                  <div className="text-xs opacity-75 mt-1">
+                  <div className="text-xs opacity-100 mt-1">
                     {formatMessageTime(message.createdAt)}
                   </div>
                 </div>
