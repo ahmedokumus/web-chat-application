@@ -73,6 +73,7 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isMessageSending, setIsMessageSending] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -115,9 +116,17 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
 
     // Yeni mesaj dinleyicisi
     socketRef.current.on('receive_message', (message: Message) => {
-      console.log('Yeni mesaj alındı:', message);
-      if (message.sender_id === selectedUser._id || message.receiver_id === selectedUser._id) {
-        setMessages(prevMessages => [...prevMessages, message]);
+      console.log('Socket üzerinden yeni mesaj alındı:', message);
+      // Sadece karşı taraftan gelen mesajları ekle
+      if (message.sender_id === selectedUser._id) {
+        setMessages(prevMessages => {
+          // Mesajın zaten eklenip eklenmediğini kontrol et
+          const messageExists = prevMessages.some(m => m._id === message._id);
+          if (!messageExists) {
+            return [...prevMessages, message];
+          }
+          return prevMessages;
+        });
       }
     });
 
@@ -227,9 +236,10 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !currentUser) return;
+    if (!newMessage.trim() || !currentUser || isMessageSending) return;
 
     try {
+      setIsMessageSending(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-chat-application-t77k.onrender.com/api';
       const token = localStorage.getItem('token');
 
@@ -276,14 +286,28 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
       if (message._id) {
         console.log('Mesaj başarıyla gönderildi:', message);
         
+        // Mesajı önce state'e ekle
+        setMessages(prevMessages => {
+          // Mesajın zaten eklenip eklenmediğini kontrol et
+          const messageExists = prevMessages.some(m => m._id === message._id);
+          if (!messageExists) {
+            return [...prevMessages, message];
+          }
+          return prevMessages;
+        });
+
         // Socket üzerinden mesajı gönder
         if (socketRef.current) {
           socketRef.current.emit('send_message', message);
         }
         
-        setMessages(prevMessages => [...prevMessages, message]);
         setNewMessage('');
         setError('');
+
+        // 2 saniye sonra yeni mesaj göndermeye izin ver
+        setTimeout(() => {
+          setIsMessageSending(false);
+        }, 2000);
       } else {
         throw new Error('Geçersiz mesaj yanıtı');
       }
@@ -294,6 +318,7 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
       } else {
         setError('Mesaj gönderilirken beklenmeyen bir hata oluştu');
       }
+      setIsMessageSending(false);
     }
   };
 
