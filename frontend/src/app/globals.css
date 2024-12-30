@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card-background: #ffffff;
+  --input-background: #ffffff;
+  --input-border: #e5e7eb;
+}
+
+[data-theme='dark'] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-background: #171717;
+  --input-background: #1f1f1f;
+  --input-border: #374151;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
