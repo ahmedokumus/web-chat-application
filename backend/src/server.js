@@ -12,11 +12,8 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-// Socket.IO servisini başlat
-const socketService = new SocketService(server);
-
 // CORS ayarlarını güncelle
-app.use(cors({
+const corsOptions = {
   origin: [
     'https://web-chat-application-indo1.vercel.app',
     'http://localhost:3000'
@@ -24,7 +21,12 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: false
-}));
+};
+
+app.use(cors(corsOptions));
+
+// Socket.IO servisini başlat
+const socketService = new SocketService(server, corsOptions);
 
 app.use(express.json());
 
@@ -35,6 +37,11 @@ app.use((req, res, next) => {
     userAgent: req.get('user-agent')
   });
   next();
+});
+
+// Health check endpoint ekle
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
 // Error handling middleware

@@ -93,13 +93,24 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
     if (!token || !selectedUser) return;
 
     // Socket.IO bağlantısını başlat
-    socketRef.current = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000', {
-      auth: { token }
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'https://web-chat-application-t77k.onrender.com';
+    console.log('Socket.IO URL:', socketUrl);
+
+    socketRef.current = io(socketUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
     // Bağlantı olaylarını dinle
     socketRef.current.on('connect', () => {
       console.log('Socket.IO bağlantısı kuruldu');
+    });
+
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Socket.IO bağlantı hatası:', error);
     });
 
     // Yeni mesaj dinleyicisi
@@ -123,11 +134,6 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
       if (data.userId === selectedUser._id) {
         setTypingStatus({ isTyping: false, characterCount: 0 });
       }
-    });
-
-    socketRef.current.on('connect_error', (error) => {
-      console.error('Socket bağlantı hatası:', error);
-      setError('Gerçek zamanlı bağlantı kurulamadı');
     });
 
     // Component unmount olduğunda bağlantıyı kapat
