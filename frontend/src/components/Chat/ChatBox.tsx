@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { User } from '@/services/api';
 import { io, Socket } from 'socket.io-client';
 
@@ -73,18 +73,18 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-  };
+  }, []);
 
   // Yeni mesajlar geldiğinde scroll'u en alta kaydır
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   // Socket.IO bağlantısını kur
   useEffect(() => {
@@ -135,9 +135,37 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
         socketRef.current.disconnect();
       }
     };
-  }, [selectedUser?._id]);
+  }, [selectedUser]);
 
   // Chat başlatma ve mesajları yükleme
+  const fetchMessages = useCallback(async (senderId: string, receiverId: string) => {
+    try {
+      setIsLoading(true);
+      setError('');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/between/${senderId}/${receiverId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Mesajlar alınamadı');
+      }
+
+      const data = await response.json();
+      setMessages(Array.isArray(data) ? data : []);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Mesajlar yüklenirken hata:', error);
+      setError('Mesajlar yüklenirken bir hata oluştu');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [scrollToBottom]);
+
   useEffect(() => {
     const initializeChat = async () => {
       const userStr = localStorage.getItem('user');
@@ -154,35 +182,7 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
     };
 
     initializeChat();
-  }, [selectedUser?._id]);
-
-  const fetchMessages = async (senderId: string, receiverId: string) => {
-    try {
-      setIsLoading(true);
-      setError('');
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/between/${senderId}/${receiverId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Mesajlar alınamadı');
-      }
-
-      const data = await response.json();
-      console.log('Gelen mesajlar:', data); // Debug için
-      setMessages(Array.isArray(data) ? data : []);
-      scrollToBottom();
-    } catch (error) {
-      console.error('Mesajlar yüklenirken hata:', error);
-      setError('Mesajlar yüklenirken bir hata oluştu');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [selectedUser, fetchMessages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

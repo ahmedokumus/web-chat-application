@@ -10,7 +10,7 @@ interface UserListProps {
 
 export default function UserList({ onSelectUser, selectedUser }: UserListProps) {
   const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = () => {
