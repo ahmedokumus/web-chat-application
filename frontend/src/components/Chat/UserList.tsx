@@ -40,9 +40,22 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
       setIsLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Sunucudan geçersiz yanıt alındı');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kullanıcılar yüklenirken bir hata oluştu');
+      }
+
       const data = await response.json();
       
       // Mevcut kullanıcıyı filtrele
@@ -50,6 +63,15 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
       setUsers(filteredUsers);
     } catch (error) {
       console.error('Kullanıcılar yüklenirken hata:', error);
+      if (error instanceof Error) {
+        // Oturum hatası durumunda kullanıcıyı login sayfasına yönlendir
+        if (error.message.includes('token') || error.message.includes('yetkilendirme')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return;
+        }
+      }
     } finally {
       setIsLoading(false);
     }

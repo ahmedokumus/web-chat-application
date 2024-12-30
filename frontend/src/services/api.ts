@@ -24,38 +24,50 @@ interface LoginResponse {
   token: string;
 }
 
+const handleResponse = async (response: Response) => {
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Bir hata oluştu');
+    }
+    return data;
+  }
+  throw new Error('Sunucudan geçersiz yanıt alındı');
+};
+
 export const authApi = {
   register: async (data: RegisterData): Promise<User> => {
-    const response = await fetch(`${API_URL}/users/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${API_URL}/users/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Kayıt işlemi başarısız oldu');
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Kayıt hatası:', error);
+      throw error;
     }
-
-    return response.json();
   },
 
   login: async (data: LoginData): Promise<LoginResponse> => {
-    const response = await fetch(`${API_URL}/users/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${API_URL}/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Giriş işlemi başarısız oldu');
+      return handleResponse(response);
+    } catch (error) {
+      console.error('Giriş hatası:', error);
+      throw error;
     }
-
-    return response.json();
   },
 }; 
