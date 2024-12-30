@@ -28,7 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-full flex flex-col`}
       >
-        <Banner message="🚀 Web Chat App Beta - Yeni özellikler yakında!" />
+        <Banner message="🚀 WebChat App Beta - Yeni özellikler yakında!" />
         <main className="flex-1 flex flex-col">
           {children}
         </main>
