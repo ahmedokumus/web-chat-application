@@ -230,25 +230,52 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
     if (!newMessage.trim() || !currentUser) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/send`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-chat-application-t77k.onrender.com/api';
+      const token = localStorage.getItem('token');
+
+      console.log('Mesaj gönderiliyor:', {
+        sender_id: currentUser._id,
+        receiver_id: selectedUser._id,
+        content: newMessage
+      });
+
+      const response = await fetch(`${apiUrl}/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
         },
+        mode: 'cors',
         body: JSON.stringify({
           sender_id: currentUser._id,
           receiver_id: selectedUser._id,
-          content: newMessage
+          content: newMessage.trim()
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Mesaj gönderilemedi');
+      console.log('Mesaj API Yanıt Status:', response.status);
+
+      // Yanıtı önce text olarak al
+      const text = await response.text();
+      console.log('Ham API Yanıtı:', text);
+
+      // Text'i JSON'a çevir
+      let message;
+      try {
+        message = JSON.parse(text);
+      } catch (e) {
+        console.error('JSON parse hatası:', e);
+        throw new Error('Sunucudan geçersiz yanıt alındı');
       }
 
-      const message = await response.json();
+      if (!response.ok) {
+        throw new Error(message.error || 'Mesaj gönderilemedi');
+      }
+
       if (message._id) {
+        console.log('Mesaj başarıyla gönderildi:', message);
+        
         // Socket üzerinden mesajı gönder
         if (socketRef.current) {
           socketRef.current.emit('send_message', message);
@@ -256,12 +283,17 @@ export default function ChatBox({ selectedUser, onClose }: ChatBoxProps) {
         
         setMessages(prevMessages => [...prevMessages, message]);
         setNewMessage('');
+        setError('');
       } else {
         throw new Error('Geçersiz mesaj yanıtı');
       }
     } catch (error) {
       console.error('Mesaj gönderilirken hata:', error);
-      setError('Mesaj gönderilirken bir hata oluştu');
+      if (error instanceof Error) {
+        setError('Mesaj gönderilirken bir hata oluştu: ' + error.message);
+      } else {
+        setError('Mesaj gönderilirken beklenmeyen bir hata oluştu');
+      }
     }
   };
 
