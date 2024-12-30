@@ -15,7 +15,17 @@ const server = http.createServer(app);
 // Socket.IO servisini başlat
 const socketService = new SocketService(server);
 
-app.use(cors());
+// CORS ayarlarını güncelle
+app.use(cors({
+  origin: [
+    'https://web-chat-application-indo1.vercel.app',
+    'http://localhost:3000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false
+}));
+
 app.use(express.json());
 
 // Request logging middleware

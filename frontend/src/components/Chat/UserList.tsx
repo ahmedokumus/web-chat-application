@@ -48,33 +48,19 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
         throw new Error('Oturum bulunamadı');
       }
 
-      // API'nin çalışıp çalışmadığını kontrol et
-      try {
-        const healthCheck = await fetch(`${apiUrl}/health`, {
-          method: 'GET',
-        });
-        console.log('API Sağlık Kontrolü:', healthCheck.status);
-      } catch (error) {
-        console.error('API sağlık kontrolü başarısız:', error);
-      }
-
       const response = await fetch(`${apiUrl}/users`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
+        credentials: 'omit',
         mode: 'cors'
       });
 
       console.log('API Yanıt Status:', response.status);
-      console.log('Content-Type:', response.headers.get('content-type'));
-      console.log('Tüm Headers:', [...response.headers.entries()]);
-
+      
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Oturum süresi dolmuş');
@@ -82,21 +68,8 @@ export default function UserList({ onSelectUser, selectedUser, isOpen, onClose }
         throw new Error(`HTTP hata: ${response.status}`);
       }
 
-      const text = await response.text();
-      console.log('Ham Yanıt:', text);
-
-      if (!text) {
-        throw new Error('Boş yanıt alındı');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error('JSON parse hatası:', e);
-        console.error('Alınan metin:', text);
-        throw new Error('Sunucudan geçersiz JSON yanıtı alındı');
-      }
+      const data = await response.json();
+      console.log('API Yanıtı:', data);
 
       // Mevcut kullanıcıyı filtrele
       const filteredUsers = Array.isArray(data) ? data.filter((user: User) => user._id !== currentUserId) : [];
